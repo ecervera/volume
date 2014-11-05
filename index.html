@@ -1,0 +1,150 @@
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+<h1>Volume of Fuel in a Tank</h1>
+
+  <p align="justify">A fuel tank has a cylinder shape with two hemispheres on each side, 
+  as shown in the figure. Write a function for computing the volume of fuel (m<sup>3</sup>) 
+  inside a tank of radius <i>r</i>, and height <i>h<sub>tank</sub></i>, 
+  when filled up to height <i>h<sub>oil</sub></i>, all measured in meters.</p>
+  
+  <p align="justify">Compute and display the filled volume of fuel in a tank with <i>r</i> = 50 cm, 
+  <i>h<sub>tank</sub></i> = 3 m, with respect to <i>h<sub>oil</sub></i>, 
+  selected by the user with a slider input, in the interval \( 0 \le h_{oil} \le 3 \) m.</p>
+
+<p align="justify">
+	<b>Hint</b>: besides the volumes of the cylinder and sphere, you will need to compute 
+	<a href="http://en.wikipedia.org/wiki/Spherical_cap">the volume of a spherical cap</a>.
+</p>	
+
+<canvas width="400" height="400"></canvas>
+
+<form oninput="V.value=volumeFuel(r,htank,hoil.valueAsNumber);
+               plotTank(r,htank,hoil.valueAsNumber)">
+  Radius: 50 cm<br>
+	Height of the tank: 3 m<br>
+  Height of fuel: <input type ="range" name="hoil" min ="0.0" max="3.0" step ="0.01"/><br>
+  Volume: <output name="V"></output>	m<sup>3</sup>
+</form>
+
+<script>
+
+var r = 0.5;
+var htank = 3;
+
+var canvas = document.querySelector('canvas');
+var ctx = canvas.getContext('2d');
+
+ctx.translate(200,350);
+var sc = 100;
+
+function sphericalCap(r,h) {
+	var v = Math.PI * h*h / 3 * (3*r-h);
+    return v;
+}
+
+function volumeFuel(r,htank,hoil) {
+
+	var hcyl = htank - 2*r;
+    var voil;
+    
+	if (hoil<=r) {
+    	voil = sphericalCap(r,hoil);
+    } else if (hoil<=r+hcyl) {
+    	voil = 2/3*Math.PI*r*r*r + Math.PI*r*r*(hoil-r);
+    } else {
+    	var hair = htank - hoil;
+    	voil = 4/3*Math.PI*r*r*r + Math.PI*r*r*hcyl - sphericalCap(r,hair);
+    }
+    
+    return voil;
+}
+
+function plot(x,y,c,cl) { 
+	ctx.beginPath();
+	ctx.moveTo(x[0]*sc, -y[0]*sc);
+	for (var i=1; i<x.length; i++) {
+		ctx.lineTo(x[i]*sc, -y[i]*sc);
+	}
+	if (cl) {
+		ctx.closePath();
+	}
+	ctx.strokeStyle = c;
+	ctx.stroke();
+}
+
+function fill(x,y,c) { 
+	ctx.beginPath();
+	ctx.moveTo(x[0]*sc, -y[0]*sc);
+	for (var i=1; i<x.length; i++) {
+		ctx.lineTo(x[i]*sc, -y[i]*sc);
+	}
+	ctx.fillStyle = c;
+	ctx.fill();
+}
+
+function arc(x,y,radius,startAngle,endAngle,counterClockwise,c) {
+	ctx.beginPath();
+	ctx.arc(x*sc,-y*sc,radius*sc,startAngle,endAngle,counterClockwise);
+	ctx.strokeStyle = c;
+	ctx.stroke();
+}
+
+function arcFill(x,y,radius,startAngle,endAngle,counterClockwise,c) {
+	ctx.beginPath();
+	ctx.arc(x*sc,-y*sc,radius*sc,startAngle,endAngle,counterClockwise);
+	ctx.fillStyle = c;
+	ctx.fill();
+}
+
+function text(s,x,y,color,align,baseline) {
+	ctx.fillStyle = color;
+	ctx.textAlign = align;
+	ctx.textBaseline = baseline; 
+	ctx.fillText(s, x*sc, -y*sc)
+}
+
+function ellipse(x,y,r,e,c) {
+	ctx.beginPath();
+	ctx.moveTo((x+r)*sc, -y*sc);
+	for (var a=0; a<2*Math.PI; a+=0.1) {
+		ctx.lineTo((x+r*Math.cos(a))*sc,-(y+r*e*Math.sin(a))*sc);
+	}
+	ctx.fillStyle = c;
+	ctx.fill();	
+}
+
+function plotTank(r,htank,hoil) {
+	ctx.fillStyle='whiteSmoke';
+	ctx.fillRect(-200,-350,400,400);
+	var roil;
+	if (hoil<=r) {
+		arcFill(0,r,r,Math.asin((r-hoil)/r),Math.PI-Math.asin((r-hoil)/r),false,'lightBlue');
+		roil = Math.sqrt(r*r-(r-hoil)*(r-hoil));
+	} else if (hoil<=htank-r) {
+		arcFill(0,r,r,0,Math.PI,false,'lightBlue');
+		fill([-r,-r,r,r],[r,hoil,hoil,r],'lightBlue');
+		roil = r;
+	} else {
+		arcFill(0,r,r,0,Math.PI,false,'lightBlue');
+		fill([-r,-r,r,r],[r,htank-r,htank-r,r],'lightBlue');
+		arcFill(0,htank-r,r,0,Math.PI,true,'lightBlue');
+		arcFill(0,htank-r,r,-Math.asin((hoil-htank+r)/r),-Math.PI+Math.asin((hoil-htank+r)/r),true,'whiteSmoke');
+		roil = Math.sqrt(r*r-(r-htank+hoil)*(r-htank+hoil));
+	}
+	ellipse(0,hoil,roil,0.25,'cyan');
+	ctx.lineWidth = 2;
+	plot([r,r],[r,htank-r],'black');
+	plot([-r,-r],[r,htank-r],'black');
+	arc(0,r,r,0,Math.PI,false,'black');
+	arc(0,htank-r,r,0,Math.PI,true,'black');
+	ctx.lineWidth = 1;
+	plot([0,-1.5],[0,-0.5],'black');
+	plot([0,-1.5],[hoil,hoil-0.5],'black');
+	plot([-1.2,-1.2],[-0.4,-0.4+hoil],'black');
+	plot([-1.25,-1.2,-1.15],[-0.5+hoil,-0.4+hoil,-0.5+hoil],'black');
+	text('h = ' + hoil + ' m',-1.25,hoil/2-0.4,'black','right','middle');
+}
+
+plotTank(r,htank,1.5);
+
+</script>
